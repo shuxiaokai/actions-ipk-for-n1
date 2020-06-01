@@ -1,0 +1,79 @@
+name: Build V2ray (without v2ctl)
+
+on:
+  push:
+    branches:
+      - master
+    #tags:
+    #  - 'v*'
+
+env:
+  SSH_ACTIONS: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo swapoff /swapfile
+        sudo rm -rf /swapfile /etc/apt/sources.list.d/*
+        sudo -E apt-get -qq update
+        sudo -E apt-get -qq install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full xz-utils msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils libelf-dev autoconf automake libtool autopoint device-tree-compiler snapd
+        wget -O https://raw.githubusercontent.com/o0HalfLife0o/actions-v2ray-without-v2ctl/master/upx
+        sudo -E mv -f upx /usr/bin/upx
+        sudo -E chmod 777 /usr/bin/upx
+        sudo -E snap install go --classic
+        sudo -E apt install curl
+        curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
+        echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+        sudo -E apt update && sudo apt install bazel
+        curl -fsSL https://raw.githubusercontent.com/P3TERX/dotfiles/master/.bashrc >> ~/.bashrc
+
+    - name: Get source code
+      run: go get -u -insecure v2ray.com/core/...
+
+    - name: Modify all.go
+      run: sed -i -e '/v2ray.com\/core\/main\/json\"/s#_#// _#' -e '/v2ray.com\/core\/main\/jsonem\"/s#// _#_#' $HOME/go/src/v2ray.com/core/main/distro/all/all.go
+
+    - name: Compile v2ray
+      id: compile
+      continue-on-error: true
+      run: |
+        mkdir -p /home/runner/v2ray
+        cd /home/runner/go/src/v2ray.com/core/main/
+        env CGO_ENABLED=0 GOOS=linux GOARCH=386 go build -o /home/runner/v2ray/v2ray_linux_32 -ldflags "-s -w"
+        env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /home/runner/v2ray/v2ray_linux_64 -ldflags "-s -w"
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -o /home/runner/v2ray/v2ray_arm -ldflags "-s -w"
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /home/runner/v2ray/v2ray_arm64 -ldflags "-s -w"
+        env CGO_ENABLED=0 GOOS=linux GOARCH=mips go build -o /home/runner/v2ray/v2ray_mips -ldflags "-s -w"
+        env CGO_ENABLED=0 GOOS=linux GOARCH=mipsle go build -o /home/runner/v2ray/v2ray_mipsle -ldflags "-s -w"
+        upx --lzma --best /home/runner/v2ray/*
+        echo "::set-output name=status::success"
+
+    - name: SSH connection to Actions
+      uses: P3TERX/debugger-action@master
+      if: env.SSH_ACTIONS == 'true'
+
+    - name: Create Release & Upload Release Asset
+      id: create_release
+      continue-on-error: true
+      uses: meeDamian/github-release@2.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref }}
+        name: Release ${{ github.ref }}
+        gzip: folders
+        files: >
+          /home/runner/v2ray/v2ray_linux_32
+          /home/runner/v2ray/v2ray_linux_64
+          /home/runner/v2ray/v2ray_arm
+          /home/runner/v2ray/v2ray_arm64
+          /home/runner/v2ray/v2ray_mips
+          /home/runner/v2ray/v2ray_mipsle
