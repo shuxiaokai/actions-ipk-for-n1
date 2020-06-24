@@ -34,7 +34,7 @@ jobs:
         curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
         echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
         sudo -E apt update && sudo apt install bazel
-        curl -fsSL https://raw.githubusercontent.com/P3TERX/dotfiles/master/.bashrc >> ~/.bashrc
+        #curl -fsSL https://raw.githubusercontent.com/P3TERX/dotfiles/master/.bashrc >> ~/.bashrc
 
     - name: Get source code
       run: go get -u -insecure v2ray.com/core/...
