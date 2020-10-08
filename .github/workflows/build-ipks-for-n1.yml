@@ -57,6 +57,7 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: "^1.15"
+      run: go version
 
     - name: Clone source code
       working-directory: /workdir
@@ -68,18 +69,39 @@ jobs:
     - name: Update feeds
       run: |
         cd openwrt/
-        sed -i 's/#src-git helloworld/src-git helloworld/g' ./feeds.conf.default
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
     - name: Load custom configuration
       run: |
-        [ -e files ] && mv files openwrt/files
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
 
     - name: SSH connection to Actions
       uses: P3TERX/debugger-action@main
       if: env.SSH_ACTIONS == 'true' || contains(github.event.action, 'ssh')
+
+    - name: Check and update Smartdns
+      run: |
+        cd ./openwrt
+        latest=$(curl -sL https://github.com/pymumu/smartdns/releases )
+        ver=$(echo "$latest"|grep -o 'smartdns.[0-9_\.-]\+.x86_64-linux-all.tar.gz' |head -1 |sed -e 's#smartdns.##' -e 's#.x86_64.*##')
+        commit=$(echo "$latest"|grep -o '/pymumu/smartdns/commit/[a-z0-9]\+'|head -1 | cut -d\/ -f5)
+        if ! grep -q "$commit" ./package/feeds/packages/smartdns/Makefile; then
+          sed -i -e '/^PKG_MIRROR_HASH/s#=.*#=skip#' -e "/^PKG_VERSION/s#=.*#=$ver#" -e "/^PKG_SOURCE_VERSION/s#=.*#=$commit#" ./package/feeds/packages/smartdns/Makefile
+          make ./package/feeds/packages/smartdns/download V=s
+          make ./package/feeds/packages/smartdns/check FIXUP=1 V=s
+        fi
+
+    - name: Check and update V2ray
+      run: |
+        cd ./openwrt
+        latest=$(curl -sL https://github.com/v2fly/v2ray-core/releases )
+        ver=$(echo "$latest"|grep -o 'tree/v[0-9]\+\.[0-9]\+\.[0-9]\+' |head -1 |cut -d v -f2)
+        if ! grep "^PKG_VERSION.*$ver" ./package/lean/v2ray/Makefile; then
+          sed -i -e '/^PKG_HASH/s#=.*#=skip#' -e "/^PKG_VERSION/s#=.*#=$ver#" ./package/lean/v2ray/Makefile
+          make ./package/lean/v2ray/download V=s
+          make ./package/lean/v2ray/check FIXUP=1 V=s
+        fi
 
     - name: Download package
       id: package
@@ -92,13 +114,9 @@ jobs:
     - name: Compile the firmware
       id: compile
       run: |
-        cd openwrt
+        cd ./openwrt
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
-        echo "::set-output name=status::success"
-        grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
-        [ -s DEVICE_NAME ] && echo "::set-env name=DEVICE_NAME::_$(cat DEVICE_NAME)"
-        echo "::set-env name=FILE_DATE::_$(date +"%Y%m%d%H%M")"
 
     - name: Check space usage
       if: (!cancelled())
@@ -107,8 +125,8 @@ jobs:
     - name: Organize files
       run: |
         mkdir -p ./artifact/package
-        cp -f ./openwrt/bin/packages/*/v2ray_*_generic.ipk ./artifact/package/
-        cp -f ./openwrt/bin/packages/*/smartdns_*_generic.ipk ./artifact/package/
+        cp -f ./openwrt/bin/packages/*/*/v2ray_*_generic.ipk ./artifact/package/
+        cp -f ./openwrt/bin/packages/*/*/smartdns_*_generic.ipk ./artifact/package/
 
     - name: Upload packages
       uses: actions/upload-artifact@v2
