@@ -147,21 +147,21 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Git push assets to "release" branch
-        run: |
-          cd publish
-          git init
-          git config --local user.name "actions"
-          git config --local user.email "action@github.com"
-          git checkout -b release
-          git add .
-          git commit -m "${{ env.RELEASE_NAME }}"
-          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          tagname="$(git ls-remote --tags origin |tail -n +6 |grep -o '[0-9v.]\+$')"
-          if [ -n "$tagname" ]; then
-            for t in $tagname ; do
-              #删除远端tag
-              git push origin :refs/tags/$t
-            done
-          fi
-          git push -f -u origin release
+    - name: Git push assets to "release" branch
+      run: |
+        cd publish
+        git init
+        git config --local user.name "actions"
+        git config --local user.email "action@github.com"
+        git checkout -b release
+        git add .
+        git commit -m "${{ env.RELEASE_NAME }}"
+        git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+        tagname="$(git ls-remote --tags origin |tail -n +6 |grep -o '[0-9v.]\+$')"
+        if [ -n "$tagname" ]; then
+          for t in $tagname ; do
+            #删除远端tag
+            git push origin :refs/tags/$t
+          done
+        fi
+        git push -f -u origin release
