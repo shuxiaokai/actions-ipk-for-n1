@@ -106,7 +106,7 @@ jobs:
           make ./package/feeds/packages/smartdns/check FIXUP=1 V=s
         fi
         latest=$(curl -sL https://github.com/o0HalfLife0o/actions-ipk-for-n1/releases )
-        if ! echo "$latest"|grep -q "smartdns_$ver"; then
+        if ! ls ../old/* |grep -q "smartdns_$ver"; then
           echo "::set-output name=status::success"
         fi
 
@@ -121,8 +121,7 @@ jobs:
           make ./package/lean/v2ray/download V=s
           make ./package/lean/v2ray/check FIXUP=1 V=s
         fi
-        latest=$(curl -sL https://github.com/o0HalfLife0o/actions-ipk-for-n1/releases )
-        if ! echo "$latest"|grep -q "v2ray_$ver"; then
+        if ! ls ../old/* |grep -q "v2ray_$ver"; then
           echo "::set-output name=status::success"
         fi
 
