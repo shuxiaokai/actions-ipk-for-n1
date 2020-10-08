@@ -185,14 +185,14 @@ jobs:
         git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
         git push -f -u origin release
 
-      - name: Cleanup tags
-        if: env.CLEAN_TAGS == 'true'
-        run: |
-          cd publish
-          sed -i '/coding.net/d' ./.git/config
-          tagname="$(git ls-remote --tags origin |tail -n +6 |grep -o '[0-9]\{12\}$')"
-          if [ -n "$tagname" ]; then
-            for t in $tagname ; do
-              git push origin :refs/tags/"$t"
-            done
-          fi
+    - name: Cleanup tags
+      if: env.CLEAN_TAGS == 'true'
+      run: |
+        cd publish
+        sed -i '/coding.net/d' ./.git/config
+        tagname="$(git ls-remote --tags origin |tail -n +6 |grep -o '[0-9]\{12\}$')"
+        if [ -n "$tagname" ]; then
+          for t in $tagname ; do
+            git push origin :refs/tags/"$t"
+          done
+        fi
