@@ -96,6 +96,7 @@ jobs:
     - name: Check and update Smartdns
       id: smartdns
       run: |
+        mkdir -p ./publish/
         cd ./openwrt
         latest=$(curl -sL https://github.com/pymumu/smartdns/releases )
         ver=$(echo "$latest"|grep -o 'smartdns.[0-9_\.-]\+.x86_64-linux-all.tar.gz' |head -1 |sed -e 's#smartdns.##' -e 's#.x86_64.*##')
@@ -105,8 +106,10 @@ jobs:
           make ./package/feeds/packages/smartdns/download V=s
           make ./package/feeds/packages/smartdns/check FIXUP=1 V=s
         fi
-        latest=$(curl -sL https://github.com/o0HalfLife0o/actions-ipk-for-n1/releases )
-        if ! ls ../old/* |grep -q "smartdns_$ver"; then
+        if ls ../old/* |grep -q "smartdns_$ver"; then
+          cp -f ../old/smartdns_*.ipk ./publish/
+          sed -i '/^CONFIG_PACKAGE_smartdns/s/^/#/' .config 
+        else
           echo "::set-output name=status::success"
         fi
 
@@ -121,7 +124,10 @@ jobs:
           make ./package/lean/v2ray/download V=s
           make ./package/lean/v2ray/check FIXUP=1 V=s
         fi
-        if ! ls ../old/* |grep -q "v2ray_$ver"; then
+        if ls ../old/* |grep -q "v2ray_$ver"; then
+          cp -f ../old/v2ray_*.ipk ./publish/
+          sed -i '/^CONFIG_PACKAGE_v2ray/s/^/#/' .config 
+        else
           echo "::set-output name=status::success"
         fi
 
@@ -149,9 +155,7 @@ jobs:
 
     - name: Organize files
       run: |
-        mkdir -p ./publish/
-        cp -f ./openwrt/bin/packages/*/*/v2ray_*_generic.ipk ./publish/
-        cp -f ./openwrt/bin/packages/*/*/smartdns_*_generic.ipk ./publish/
+        cp -rf $(find ./openwrt/bin/packages/ -type f -regex ".*\(smartdns\|v2ray\)_.*.ipk") ./publish/
 
     - name: Release and upload assets
       uses: softprops/action-gh-release@v1
