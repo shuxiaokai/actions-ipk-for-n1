@@ -106,8 +106,8 @@ jobs:
           make ./package/feeds/packages/smartdns/download V=s
           make ./package/feeds/packages/smartdns/check FIXUP=1 V=s
         fi
-        if ls ../old/* |grep -q "smartdns_$ver"; then
-          cp -f ../old/smartdns_*.ipk ./publish/
+        if ls $GITHUB_WORKSPACE/old/* |grep -q "smartdns_$ver"; then
+          cp -f $GITHUB_WORKSPACE/old/smartdns_*.ipk ./publish/
           sed -i '/^CONFIG_PACKAGE_smartdns/s/^/#/' .config 
         else
           echo "::set-output name=status::success"
@@ -124,8 +124,8 @@ jobs:
           make ./package/lean/v2ray/download V=s
           make ./package/lean/v2ray/check FIXUP=1 V=s
         fi
-        if ls ../old/* |grep -q "v2ray_$ver"; then
-          cp -f ../old/v2ray_*.ipk ./publish/
+        if ls $GITHUB_WORKSPACE/old/* |grep -q "v2ray_$ver"; then
+          cp -f $GITHUB_WORKSPACE/old/v2ray_*.ipk ./publish/
           sed -i '/^CONFIG_PACKAGE_v2ray/s/^/#/' .config 
         else
           echo "::set-output name=status::success"
@@ -185,7 +185,6 @@ jobs:
         tagname="$(git ls-remote --tags origin |tail -n +6 |grep -o '[0-9]\{12\}$')"
         if [ -n "$tagname" ]; then
           for t in $tagname ; do
-            #删除远端tag
             git push origin :refs/tags/$t
           done
         fi
