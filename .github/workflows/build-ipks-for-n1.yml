@@ -179,7 +179,7 @@ jobs:
         git add .
         git commit -m "${{ env.RELEASE_NAME }}"
         git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-        tagname="$(git ls-remote --tags origin |tail -n +6 |grep -o '[0-9v.]\+$')"
+        tagname="$(git ls-remote --tags origin |tail -n +6 |grep -o '[0-9]\{12\}$')"
         if [ -n "$tagname" ]; then
           for t in $tagname ; do
             #删除远端tag
