@@ -75,6 +75,7 @@ jobs:
         fi
 
     - name: Initialization environment
+      id: intial
       if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -89,9 +90,11 @@ jobs:
         sudo timedatectl set-timezone "$TZ"
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
+        echo "::set-output name=status::success"
+
 
     - name: Set $GOPATH and more variables
-      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
+      if: steps.intial.outputs.status == 'success'
       run: |
         echo "RELEASE_NAME=Released on $(date -d "8 hour" -u +%Y%m%d%H%M)" >> $GITHUB_ENV
         echo "TAG_NAME=$(date -d "8 hour" -u +%Y%m%d%H%M)" >> $GITHUB_ENV
@@ -101,26 +104,27 @@ jobs:
 
     - name: Setup Go 1.x
       uses: actions/setup-go@v2
-      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
+      if: steps.intial.outputs.status == 'success'
       with:
         go-version: "^1.15"
 
     - name: Clone source code
       working-directory: /workdir
-      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
+      if: steps.intial.outputs.status == 'success'
       run: |
         df -hT $PWD
         git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
     - name: Update feeds
-      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
+      if: steps.intial.outputs.status == 'success'
       run: |
         cd openwrt/
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
     - name: Load custom configuration
+      if: steps.intial.outputs.status == 'success'
       run: |
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
 
@@ -149,18 +153,15 @@ jobs:
         fi
 
     - name: Download package
-      id: download
-      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
+      if: steps.intial.outputs.status == 'success'
       run: |
         cd openwrt
         make defconfig
         make download -j8
         find dl -size -1024c -exec rm -f {} \;
-        echo "::set-output name=status::success"
 
     - name: Compile the firmware
-      id: compile
-      if: steps.download.outputs.status == 'success'
+      if: steps.intial.outputs.status == 'success'
       run: |
         cd ./openwrt
         echo -e "$(nproc) thread compile"
@@ -171,13 +172,13 @@ jobs:
       run: df -hT
 
     - name: Organize files
-      if: steps.download.outputs.status == 'success'
+      if: steps.intial.outputs.status == 'success'
       run: |
         cp -rf $(find ./openwrt/bin/packages/ -type f -regex ".*\(smartdns\|v2ray\)_.*.ipk") ./publish/
 
     - name: Release and upload assets
       uses: softprops/action-gh-release@v1
-      if: steps.download.outputs.status == 'success'
+      if: steps.intial.outputs.status == 'success'
       with:
         name: ${{ env.RELEASE_NAME }}
         tag_name: ${{ env.TAG_NAME }}
@@ -189,7 +190,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Git push assets to "release" branch
-      if: steps.download.outputs.status == 'success'
+      if: steps.intial.outputs.status == 'success'
       run: |
         cd publish
         git init
@@ -202,7 +203,7 @@ jobs:
         git push -f -u origin release
 
     - name: Cleanup tags
-      if: env.CLEAN_TAGS == 'true'
+      if: env.CLEAN_TAGS == 'true' && steps.intial.outputs.status == 'success'
       run: |
         cd publish
         sed -i '/coding.net/d' ./.git/config
