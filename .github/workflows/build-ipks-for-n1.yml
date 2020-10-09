@@ -45,7 +45,37 @@ jobs:
         ref: release
         path: old
 
+    - name: Check Smartdns
+      id: smartdns
+      run: |
+        mkdir -p ./publish/
+        latest=$(curl -sL https://github.com/pymumu/smartdns/releases )
+        ver=$(echo "$latest"|grep -o 'smartdns.[0-9_\.-]\+.x86_64-linux-all.tar.gz' |head -1 |sed -e 's#smartdns.##' -e 's#.x86_64.*##')
+        commit=$(echo "$latest"|grep -o '/pymumu/smartdns/commit/[a-z0-9]\+'|head -1 | cut -d\/ -f5)
+        if ls ./old/* |grep -q "smartdns_$ver"; then
+          cp -f ./old/smartdns_*.ipk ./publish/
+          sed -i '/^CONFIG_PACKAGE_smartdns/s/^/#/' ./.config 
+        else
+          echo "::set-output name=status::success"
+          echo "::set-output name=version::$ver"
+          echo "::set-output name=commit::$commit"
+        fi
+
+    - name: Check V2ray
+      id: v2ray
+      run: |
+        latest=$(curl -sL https://github.com/v2fly/v2ray-core/releases )
+        ver=$(echo "$latest"|grep -o 'tree/v[0-9]\+\.[0-9]\+\.[0-9]\+' |head -1 |cut -d v -f2)
+        if ls ./old/* |grep -q "v2ray_$ver"; then
+          cp -f ./old/v2ray_*.ipk ./publish/
+          sed -i '/^CONFIG_PACKAGE_v2ray/s/^/#/' ./.config 
+        else
+          echo "::set-output name=status::success"
+          echo "::set-output name=version::$ver"
+        fi
+
     - name: Initialization environment
+      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
@@ -61,6 +91,7 @@ jobs:
         sudo chown $USER:$GROUPS /workdir
 
     - name: Set $GOPATH and more variables
+      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
       run: |
         echo "RELEASE_NAME=Released on $(date -d "8 hour" -u +%Y%m%d%H%M)" >> $GITHUB_ENV
         echo "TAG_NAME=$(date -d "8 hour" -u +%Y%m%d%H%M)" >> $GITHUB_ENV
@@ -70,17 +101,20 @@ jobs:
 
     - name: Setup Go 1.x
       uses: actions/setup-go@v2
+      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
       with:
         go-version: "^1.15"
 
     - name: Clone source code
       working-directory: /workdir
+      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
       run: |
         df -hT $PWD
         git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
     - name: Update feeds
+      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
       run: |
         cd openwrt/
         ./scripts/feeds update -a
@@ -94,42 +128,24 @@ jobs:
       uses: P3TERX/debugger-action@main
       if: env.SSH_ACTIONS == 'true' || contains(github.event.action, 'ssh')
 
-    - name: Check and update Smartdns
-      id: smartdns
+    - name: Update Smartdns
+      if: steps.smartdns.outputs.status == 'success'
       run: |
-        mkdir -p ./publish/
         cd ./openwrt
-        latest=$(curl -sL https://github.com/pymumu/smartdns/releases )
-        ver=$(echo "$latest"|grep -o 'smartdns.[0-9_\.-]\+.x86_64-linux-all.tar.gz' |head -1 |sed -e 's#smartdns.##' -e 's#.x86_64.*##')
-        commit=$(echo "$latest"|grep -o '/pymumu/smartdns/commit/[a-z0-9]\+'|head -1 | cut -d\/ -f5)
-        if ! grep -q "$commit" ./package/feeds/packages/smartdns/Makefile; then
-          sed -i -e '/^PKG_MIRROR_HASH/s#=.*#=skip#' -e "/^PKG_VERSION/s#=.*#=$ver#" -e "/^PKG_SOURCE_VERSION/s#=.*#=$commit#" ./package/feeds/packages/smartdns/Makefile
+        if ! grep -q "${{ steps.smartdns.outputs.commit }}" ./package/feeds/packages/smartdns/Makefile; then
+          sed -i -e '/^PKG_MIRROR_HASH/s#=.*#=skip#' -e "/^PKG_VERSION/s#=.*#=${{ steps.smartdns.outputs.version }}#" -e "/^PKG_SOURCE_VERSION/s#=.*#=${{ steps.smartdns.outputs.commit }}#" ./package/feeds/packages/smartdns/Makefile
           make ./package/feeds/packages/smartdns/download V=s
           make ./package/feeds/packages/smartdns/check FIXUP=1 V=s
         fi
-        if ls $GITHUB_WORKSPACE/old/* |grep -q "smartdns_$ver"; then
-          cp -f $GITHUB_WORKSPACE/old/smartdns_*.ipk $GITHUB_WORKSPACE/publish/
-          sed -i '/^CONFIG_PACKAGE_smartdns/s/^/#/' .config 
-        else
-          echo "::set-output name=status::success"
-        fi
 
-    - name: Check and update V2ray
-      id: v2ray
+    - name: Update V2ray
+      if: steps.v2ray.outputs.status == 'success'
       run: |
         cd ./openwrt
-        latest=$(curl -sL https://github.com/v2fly/v2ray-core/releases )
-        ver=$(echo "$latest"|grep -o 'tree/v[0-9]\+\.[0-9]\+\.[0-9]\+' |head -1 |cut -d v -f2)
-        if ! grep "^PKG_VERSION.*$ver" ./package/lean/v2ray/Makefile; then
-          sed -i -e '/^PKG_HASH/s#=.*#=skip#' -e "/^PKG_VERSION/s#=.*#=$ver#" ./package/lean/v2ray/Makefile
+        if ! grep "^PKG_VERSION.*${{ steps.v2ray.outputs.version }}" ./package/lean/v2ray/Makefile; then
+          sed -i -e '/^PKG_HASH/s#=.*#=skip#' -e "/^PKG_VERSION/s#=.*#=${{ steps.v2ray.outputs.version }}#" ./package/lean/v2ray/Makefile
           make ./package/lean/v2ray/download V=s
           make ./package/lean/v2ray/check FIXUP=1 V=s
-        fi
-        if ls $GITHUB_WORKSPACE/old/* |grep -q "v2ray_$ver"; then
-          cp -f $GITHUB_WORKSPACE/old/v2ray_*.ipk $GITHUB_WORKSPACE/publish/
-          sed -i '/^CONFIG_PACKAGE_v2ray/s/^/#/' .config 
-        else
-          echo "::set-output name=status::success"
         fi
 
     - name: Download package
