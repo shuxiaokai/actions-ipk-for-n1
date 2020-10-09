@@ -12,9 +12,9 @@ name: Build ipks For N1
 
 on:
   repository_dispatch:
-  push:
-    branches:
-      - master
+#  push:
+#    branches:
+#      - master
 #    paths:
 #      - '.config'
   schedule:
@@ -48,12 +48,10 @@ jobs:
     - name: Check Smartdns
       id: smartdns
       run: |
-        mkdir -p ./publish/
         latest=$(curl -sL https://github.com/pymumu/smartdns/releases )
         ver=$(echo "$latest"|grep -o 'smartdns.[0-9_\.-]\+.x86_64-linux-all.tar.gz' |head -1 |sed -e 's#smartdns.##' -e 's#.x86_64.*##')
         commit=$(echo "$latest"|grep -o '/pymumu/smartdns/commit/[a-z0-9]\+'|head -1 | cut -d\/ -f5)
         if ls ./old/* |grep -q "smartdns_$ver"; then
-          cp -f ./old/smartdns_*.ipk ./publish/
           sed -i '/^CONFIG_PACKAGE_smartdns/s/^/#/' ./.config 
         else
           echo "::set-output name=status::success"
@@ -67,7 +65,6 @@ jobs:
         latest=$(curl -sL https://github.com/v2fly/v2ray-core/releases )
         ver=$(echo "$latest"|grep -o 'tree/v[0-9]\+\.[0-9]\+\.[0-9]\+' |head -1 |cut -d v -f2)
         if ls ./old/* |grep -q "v2ray_$ver"; then
-          cp -f ./old/v2ray_*.ipk ./publish/
           sed -i '/^CONFIG_PACKAGE_v2ray/s/^/#/' ./.config 
         else
           echo "::set-output name=status::success"
@@ -140,6 +137,7 @@ jobs:
           make ./package/feeds/packages/smartdns/download V=s
           make ./package/feeds/packages/smartdns/check FIXUP=1 V=s
         fi
+        cp -f ./bin/packages/*/*/smartdns_${{ env.SMARTDNS_VER }}*.ipk $GITHUB_WORKSPACE/old/
 
     - name: Update V2ray
       if: steps.v2ray.outputs.status == 'success'
@@ -150,6 +148,7 @@ jobs:
           make ./package/lean/v2ray/download V=s
           make ./package/lean/v2ray/check FIXUP=1 V=s
         fi
+        cp -f ./bin/packages/*/*/v2ray_${{ env.V2RAY_VER }}*.ipk $GITHUB_WORKSPACE/old/
 
     - name: Download package
       if: steps.intial.outputs.status == 'success'
@@ -170,11 +169,6 @@ jobs:
       if: (!cancelled())
       run: df -hT
 
-    - name: Organize files
-      if: steps.intial.outputs.status == 'success'
-      run: |
-        cp -rf $(find ./openwrt/bin/packages/ -type f -regex ".*\(smartdns\|v2ray\)_.*.ipk") ./publish/
-
     - name: Release and upload assets
       uses: softprops/action-gh-release@v1
       if: steps.intial.outputs.status == 'success'
@@ -184,27 +178,26 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          ./publish/*
+          ./old/*.ipk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Git push assets to "release" branch
       if: steps.intial.outputs.status == 'success'
       run: |
-        cd publish
-        git init
+        cd ./old
+        sed -i '/url =/d' ./.git/config
         git config --local user.name "actions"
         git config --local user.email "action@github.com"
-        git checkout -b release
         git add .
         git commit -m "${{ env.RELEASE_NAME }}"
-        git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-        git push -f -u origin release
+        git remote set-url --add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+        git push -u origin release
 
     - name: Cleanup tags
       if: env.CLEAN_TAGS == 'true' && steps.intial.outputs.status == 'success'
       run: |
-        cd publish
+        cd ./old
         sed -i '/coding.net/d' ./.git/config
         tagname="$(git ls-remote --tags origin |tail -n +6 |grep -o '[0-9]\{12\}$')"
         if [ -n "$tagname" ]; then
