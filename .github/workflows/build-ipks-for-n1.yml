@@ -80,7 +80,7 @@ jobs:
         fi
         echo "V2RAY_VER=$ver" >> $GITHUB_ENV
 
-    -name: test
+    - name: test
       run: |
         echo "SMARTDNS_VER: ${{ env.SMARTDNS_VER }}"
         echo "SMARTDNS_COMMIT: ${{ env.SMARTDNS_COMMIT }}"
