@@ -59,7 +59,11 @@ jobs:
           echo "::set-output name=status::success"
           echo "::set-output name=version::$ver"
           echo "::set-output name=commit::$commit"
+          echo "SMARTDNS_VER=$ver" >> $GITHUB_ENV
+          echo "SMARTDNS_COMMIT=$commit" >> $GITHUB_ENV
         fi
+        echo "SMARTDNS_VER=$ver" >> $GITHUB_ENV
+        echo "SMARTDNS_COMMIT=$commit" >> $GITHUB_ENV
 
     - name: Check V2ray
       id: v2ray
@@ -72,7 +76,15 @@ jobs:
         else
           echo "::set-output name=status::success"
           echo "::set-output name=version::$ver"
+          echo "V2RAY_VER=$ver" >> $GITHUB_ENV
         fi
+        echo "V2RAY_VER=$ver" >> $GITHUB_ENV
+
+    -name: test
+      run: |
+        echo "SMARTDNS_VER: ${{ env.SMARTDNS_VER }}"
+        echo "SMARTDNS_COMMIT: ${{ env.SMARTDNS_COMMIT }}"
+        echo "V2RAY_VER: ${{ env.V2RAY_VER }}"
 
     - name: Initialization environment
       id: intial
