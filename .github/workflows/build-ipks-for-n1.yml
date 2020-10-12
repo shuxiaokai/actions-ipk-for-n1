@@ -167,7 +167,7 @@ jobs:
         make -j$(nproc) || make -j1 || make -j1 V=s
 
     - name: Check space usage
-      if: (!cancelled())
+      if: steps.intial.outputs.status == 'success' && (!cancelled())
       run: df -hT
 
     - name: Release and upload assets
