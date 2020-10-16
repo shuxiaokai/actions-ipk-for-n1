@@ -12,9 +12,9 @@ name: Build ipks For N1
 
 on:
   repository_dispatch:
-#  push:
-#    branches:
-#      - master
+  push:
+    branches:
+      - master
 #    paths:
 #      - '.config'
   schedule:
@@ -136,8 +136,7 @@ jobs:
           make ./package/feeds/packages/smartdns/download V=s
           make ./package/feeds/packages/smartdns/check FIXUP=1 V=s
         fi
-        echo "CHANGELOG='Update: Smartdns '${{ env.SMARTDNS_VER }}" >> $GITHUB_ENV
-        cp -f ./bin/packages/*/*/smartdns_${{ env.SMARTDNS_VER }}*.ipk $GITHUB_WORKSPACE/old/
+        echo "CHANGELOG='Update: smartdns '${{ env.SMARTDNS_VER }}" >> $GITHUB_ENV
 
     - name: Update V2ray
       if: steps.v2ray.outputs.status == 'success'
@@ -148,8 +147,7 @@ jobs:
           make ./package/lean/v2ray/download V=s
           make ./package/lean/v2ray/check FIXUP=1 V=s
         fi
-        echo "CHANGELOG='Update: V2ray '${{ env.V2RAY_VER }}" >> $GITHUB_ENV
-        cp -f ./bin/packages/*/*/v2ray_${{ env.V2RAY_VER }}*.ipk $GITHUB_WORKSPACE/old/
+        echo "CHANGELOG='Update: v2ray '${{ env.V2RAY_VER }}" >> $GITHUB_ENV
 
     - name: Download package
       if: steps.intial.outputs.status == 'success'
@@ -169,6 +167,13 @@ jobs:
     - name: Check space usage
       if: steps.intial.outputs.status == 'success' && (!cancelled())
       run: df -hT
+
+    - name: Organize files
+      if: steps.intial.outputs.status == 'success'
+      run: |
+        newFile=$(echo ${{ env.CHANGELOG }} | grep -o '\(smartdns\|v2ray\)' )
+        rm -f  $GITHUB_WORKSPACE/old/$newFile_*.ipk
+        cp -f ./openwrt/bin/packages/*/*/$newFile_*.ipk $GITHUB_WORKSPACE/old/
 
     - name: Release and upload assets
       uses: softprops/action-gh-release@v1
