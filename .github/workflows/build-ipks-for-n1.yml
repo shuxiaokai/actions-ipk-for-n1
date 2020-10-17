@@ -35,17 +35,27 @@ jobs:
     if: github.event.repository.owner.id == github.event.sender.id
 
     steps:
+    - name: Check Actions Status
+      id: actions
+      run: |
+        if ! curl -sL https://github.com/o0HalfLife0o/actions-ipk-for-n1/actions |grep -q 'In progress'; then
+          echo "::set-output name=status::success"
+        fi
+
     - name: Checkout
       uses: actions/checkout@v2
+      if: steps.actions.outputs.status == 'success'
 
     - name: Checkout the "release" branch
       uses: actions/checkout@v2
+      if: steps.actions.outputs.status == 'success'
       with:
         ref: release
         path: old
 
     - name: Check Smartdns
       id: smartdns
+      if: steps.actions.outputs.status == 'success'
       run: |
         latest=$(curl -sL https://github.com/pymumu/smartdns/releases )
         ver=$(echo "$latest"|grep -o 'smartdns.[0-9_\.-]\+.x86_64-linux-all.tar.gz' |head -1 |sed -e 's#smartdns.##' -e 's#.x86_64.*##')
@@ -60,6 +70,7 @@ jobs:
 
     - name: Check V2ray
       id: v2ray
+      if: steps.actions.outputs.status == 'success'
       run: |
         latest=$(curl -sL https://github.com/v2fly/v2ray-core/releases )
         ver=$(echo "$latest"|grep -o 'tree/v[0-9]\+\.[0-9]\+\.[0-9]\+' |head -1 |cut -d v -f2)
