@@ -86,7 +86,7 @@ jobs:
       if: steps.v2ray.outputs.status == 'success'
       run: |
         get_Go_ver=$(curl -sL https://raw.githubusercontent.com/v2fly/v2ray-core/master/azure-pipelines.yml |grep '^\ \+version: ' |cut -d \" -f2 )
-        get_Go_ver_major=$(echo $get_Go_ver |grep -o '^[0-9]\+\.[0-9]\+')
+        get_Go_ver_major=$(echo $get_Go_ver |awk -F '.' '{print $1"."$2}')
         get_Go_ver_patch=$(echo $get_Go_ver |cut -d \. -f3)
         lean_golang=$(curl -sL https://raw.githubusercontent.com/coolsnowwolf/packages/master/lang/golang/golang/Makefile)
         if ! echo "$lean_golang" |grep -q "GO_VERSION_MAJOR_MINOR:=$get_Go_ver_major" || ! echo "$lean_golang" |grep -q "GO_VERSION_PATCH:=$get_Go_ver_patch" ; then
