@@ -81,6 +81,21 @@ jobs:
           echo "V2RAY_VER=$ver" >> $GITHUB_ENV
         fi
 
+    - name: Check Golang
+      id: golang
+      if: steps.v2ray.outputs.status == 'success'
+      run: |
+        get_Go_ver=$(curl -sL https://raw.githubusercontent.com/v2fly/v2ray-core/master/azure-pipelines.yml |grep '^\ \+version: ' |cut -d \" -f2 )
+        get_Go_ver_major=$(echo $get_Go_ver |grep -o '^[0-9]\+\.[0-9]\+')
+        get_Go_ver_patch=$(echo $get_Go_ver |cut -d \. -f3)
+        lean_golang=$(curl -sL https://raw.githubusercontent.com/coolsnowwolf/packages/master/lang/golang/golang/Makefile)
+        if ! echo "$lean_golang" |grep -q "GO_VERSION_MAJOR_MINOR:=$get_Go_ver_major" || ! echo "$lean_golang" |grep -q "GO_VERSION_PATCH:=$get_Go_ver_patch" ; then
+          echo "GO_VERSION_MAJOR_MINOR_PATCH=$get_Go_ver" >> $GITHUB_ENV
+          echo "GO_VERSION_MAJOR_MINOR=$get_Go_ver_major" >> $GITHUB_ENV
+          echo "GO_VERSION_PATCH=$get_Go_ver_patch" >> $GITHUB_ENV
+          echo "::set-output name=status::success"
+        fi
+
     - name: Initialization environment
       id: intial
       if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
@@ -111,8 +126,8 @@ jobs:
     - name: Setup Go 1.x
       uses: actions/setup-go@v2
       if: steps.intial.outputs.status == 'success'
-      with:
-        go-version: "^1.15"
+      #with:
+      #  go-version: "^1.15"
 
     - name: Clone source code
       working-directory: /workdir
@@ -148,6 +163,17 @@ jobs:
           make ./package/feeds/packages/smartdns/check FIXUP=1 V=s
         fi
         echo "CHANGELOG='Update: smartdns '${{ env.SMARTDNS_VER }}" >> $GITHUB_ENV
+
+    - name: Update Golang
+      if: steps.golang.outputs.status == 'success'
+      run: |
+        cd ./openwrt
+        lean_golang=$(cat ./feeds/packages/lang/golang/golang/Makefile)
+        if ! echo "$lean_golang" |grep -q "GO_VERSION_MAJOR_MINOR:=$get_Go_ver_major" || ! echo "$lean_golang" |grep -q "GO_VERSION_PATCH:=$get_Go_ver_patch" ; then
+          sed -i -e '/^PKG_HASH/s#=.*#=skip#' -e "/^GO_VERSION_MAJOR_MINOR/s#=.*#=${{ env.GO_VERSION_MAJOR_MINOR }}#" -e "/^GO_VERSION_PATCH/s#=.*#=${{ env.GO_VERSION_PATCH }}#" ./feeds/packages/lang/golang/golang/Makefile
+          make ./feeds/packages/lang/golang/golang/download V=s
+          make ./feeds/packages/lang/golang/golang/check FIXUP=1 V=s
+        fi
 
     - name: Update V2ray
       if: steps.v2ray.outputs.status == 'success'
