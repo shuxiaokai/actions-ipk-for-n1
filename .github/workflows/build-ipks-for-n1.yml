@@ -12,9 +12,9 @@ name: Build ipks For N1
 
 on:
   repository_dispatch:
-  push:
-    branches:
-      - master
+#  push:
+#    branches:
+#      - master
 #    paths:
 #      - '.config'
   schedule:
@@ -127,8 +127,8 @@ jobs:
     - name: Setup Go 1.x
       uses: actions/setup-go@v2
       if: steps.intial.outputs.status == 'success'
-      #with:
-      #  go-version: "^1.15"
+      with:
+        go-version: "^1.15"
 
     - name: Clone source code
       working-directory: /workdir
