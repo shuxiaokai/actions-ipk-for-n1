@@ -12,9 +12,9 @@ name: Build ipks For N1
 
 on:
   repository_dispatch:
-#  push:
-#    branches:
-#      - master
+  push:
+    branches:
+      - master
 #    paths:
 #      - '.config'
   schedule:
@@ -186,6 +186,14 @@ jobs:
           make ./package/lean/v2ray/check FIXUP=1 V=s
         fi
         echo "CHANGELOG=Update: v2ray ${{ env.V2RAY_VER }}" >> $GITHUB_ENV
+
+    - name: Organize files
+      if: steps.intial.outputs.status == 'success'
+      run: |
+        newFile=$(echo "${{ env.CHANGELOG }}" | grep -o '\(smartdns\|v2ray\)' )
+        echo $newFile
+        rm -f  $GITHUB_WORKSPACE/old/$newFile_*.ipk
+        cp -f ./openwrt/bin/packages/*/*/$newFile_*.ipk $GITHUB_WORKSPACE/old/
 
     - name: Download package
       if: steps.intial.outputs.status == 'success'
