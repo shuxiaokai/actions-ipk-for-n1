@@ -12,9 +12,9 @@ name: Build ipks For N1
 
 on:
   repository_dispatch:
-#  push:
-#    branches:
-#      - master
+  push:
+    branches:
+      - master
 #    paths:
 #      - '.config'
   schedule:
