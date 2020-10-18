@@ -210,8 +210,8 @@ jobs:
       if: steps.intial.outputs.status == 'success'
       run: |
         newFile=$(echo "${{ env.CHANGELOG }}" | cut -d\  -f2 )
-        rm -f  $GITHUB_WORKSPACE/old/$newFile_*.ipk
-        cp -f ./openwrt/bin/packages/*/*/$newFile_*.ipk $GITHUB_WORKSPACE/old/
+        rm -f  $GITHUB_WORKSPACE/old/${newFile}_*.ipk
+        cp -f ./openwrt/bin/packages/*/*/${newFile}_*.ipk $GITHUB_WORKSPACE/old/
 
     - name: Release and upload assets
       uses: softprops/action-gh-release@v1
