@@ -39,7 +39,6 @@ jobs:
       id: actions
       run: |
         actions_num=$(curl -sL https://github.com/o0HalfLife0o/actions-ipk-for-n1/actions |grep 'In progress' |wc -l)
-        echo "actions_num: $actions_num"
         if [ "$actions_num" -le "2" ]; then
           echo "::set-output name=status::success"
         fi
