@@ -38,7 +38,8 @@ jobs:
     - name: Check Actions Status
       id: actions
       run: |
-        if ! curl -sL https://github.com/o0HalfLife0o/actions-ipk-for-n1/actions |grep -q 'In progress'; then
+        actions_num=$(curl -sL https://github.com/o0HalfLife0o/actions-ipk-for-n1/actions |grep 'In progress' |wc -l)
+        if [ $actions_num -le 1 ]; then
           echo "::set-output name=status::success"
         fi
 
