@@ -82,9 +82,22 @@ jobs:
           echo "V2RAY_VER=$ver" >> $GITHUB_ENV
         fi
 
+    - name: Check Xray
+      id: xray
+      if: steps.actions.outputs.status == 'success'
+      run: |
+        latest=$(curl -sL https://github.com/XTLS/Xray-core/releases )
+        ver=$(echo "$latest"|grep -o 'tree/v[0-9]\+\.[0-9]\+\.[0-9]\+' |head -1 |cut -d v -f2)
+        if ls ./old/* |grep -q "xray_$ver"; then
+          sed -i '/CONFIG_PACKAGE_xray/c CONFIG_PACKAGE_xray=y' ./.config
+        else
+          echo "::set-output name=status::success"
+          echo "XRAY_VER=$ver" >> $GITHUB_ENV
+        fi
+
     - name: Check Golang
       id: golang
-      if: steps.v2ray.outputs.status == 'success'
+      if: steps.v2ray.outputs.status == 'success' || steps.xray.outputs.status == 'success'
       run: |
         get_Go_ver=$(curl -sL https://raw.githubusercontent.com/v2fly/v2ray-core/master/azure-pipelines.yml |grep '^\ \+version: ' |cut -d \" -f2 )
         get_Go_ver_major=$(echo $get_Go_ver |awk -F '.' '{print $1"."$2}')
@@ -99,7 +112,7 @@ jobs:
 
     - name: Initialization environment
       id: intial
-      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success'
+      if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success' || steps.xray.outputs.status == 'success'
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
@@ -186,6 +199,17 @@ jobs:
           make ./package/lean/v2ray/check FIXUP=1 V=s
         fi
         echo "CHANGELOG=Update: v2ray ${{ env.V2RAY_VER }}" >> $GITHUB_ENV
+
+    - name: Update Xray
+      if: steps.xray.outputs.status == 'success'
+      run: |
+        cd ./openwrt
+        if ! grep "^PKG_VERSION.*${{ env.XRAY_VER }}" ./package/lean/xray/Makefile; then
+          sed -i -e '/^PKG_HASH/s#=.*#=skip#' -e "/^PKG_VERSION/s#=.*#=${{ env.XRAY_VER }}#" ./package/lean/xray/Makefile
+          make ./package/lean/xray/download V=s
+          make ./package/lean/xray/check FIXUP=1 V=s
+        fi
+        echo "CHANGELOG=Update: xray ${{ env.XRAY_VER }}" >> $GITHUB_ENV
 
     - name: Download package
       if: steps.intial.outputs.status == 'success'
