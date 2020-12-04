@@ -206,6 +206,8 @@ jobs:
         cd ./openwrt
         if ! grep "^PKG_VERSION.*${{ env.XRAY_VER }}" ./package/lean/xray/Makefile; then
           sed -i -e '/^PKG_HASH/s#=.*#=skip#' -e "/^PKG_VERSION/s#=.*#=${{ env.XRAY_VER }}#" ./package/lean/xray/Makefile
+          #update to v1.1.1
+          sed -i '/GO_PKG:=/s#/v1$##' ./package/lean/xray/Makefile
           make ./package/lean/xray/download V=s
           make ./package/lean/xray/check FIXUP=1 V=s
         fi
