@@ -1,4 +1,4 @@
-# actions-v2ray-without-v2ctl
+# actions ipks for n1
 
 - 在触发工作流程后，在 Actions 页面等待执行到`SSH connection to Actions`步骤，会出现下面信息：  
   ***
