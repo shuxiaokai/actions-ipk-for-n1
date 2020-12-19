@@ -155,7 +155,7 @@ jobs:
         cd openwrt/
         git init
         git remote add openwrt $REPO_URL
-        git fetch --depth 1 lede e04fd21629fead0cae623df65a6a58466dfe1d51
+        git fetch --depth 1 openwrt e04fd21629fead0cae623df65a6a58466dfe1d51
         git reset --hard e04fd21629fead0cae623df65a6a58466dfe1d51
         #link to openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
