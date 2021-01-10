@@ -264,7 +264,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Git push assets to "release" branch
-      if: steps.intial.outputs.status == 'success'
+      if: steps.initial.outputs.status == 'success'
       run: |
         cd ./old
         sed -i '/url =/d' ./.git/config
