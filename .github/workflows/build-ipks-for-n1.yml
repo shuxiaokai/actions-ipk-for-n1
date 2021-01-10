@@ -277,7 +277,7 @@ jobs:
 
     - name: Organize files to Lanzou
       id: lanzou
-      if: steps.initial.outputs.status == 'success' && ${{ env.LANZOU_PSD }}
+      if: steps.initial.outputs.status == 'success'
       run: |
         newFile=$(echo "${{ env.CHANGELOG }}" | cut -d\  -f2 )
         mv -f $GITHUB_WORKSPACE/old/${newFile}_*.ipk $GITHUB_WORKSPACE/old/${newFile}_*.zip
