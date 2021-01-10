@@ -114,7 +114,7 @@ jobs:
         fi
 
     - name: Initialization environment
-      id: intial
+      id: initial
       if: steps.smartdns.outputs.status == 'success' || steps.v2ray.outputs.status == 'success' || steps.xray.outputs.status == 'success'
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -132,7 +132,7 @@ jobs:
         echo "::set-output name=status::success"
 
     - name: Set $GOPATH and more variables
-      if: steps.intial.outputs.status == 'success'
+      if: steps.initial.outputs.status == 'success'
       run: |
         echo "RELEASE_NAME=Released on $(date -d "8 hour" -u +%Y%m%d%H%M)" >> $GITHUB_ENV
         echo "TAG_NAME=$(date -d "8 hour" -u +%Y%m%d%H%M)" >> $GITHUB_ENV
@@ -142,13 +142,13 @@ jobs:
 
     - name: Setup Go 1.x
       uses: actions/setup-go@v2
-      if: steps.intial.outputs.status == 'success'
+      if: steps.initial.outputs.status == 'success'
       with:
         go-version: "^1.15"
 
     - name: Clone source code
       working-directory: /workdir
-      if: steps.intial.outputs.status == 'success'
+      if: steps.initial.outputs.status == 'success'
       run: |
         df -hT $PWD
         #clone latest
@@ -164,14 +164,14 @@ jobs:
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
     - name: Update feeds
-      if: steps.intial.outputs.status == 'success'
+      if: steps.initial.outputs.status == 'success'
       run: |
         cd openwrt/
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
     - name: Load custom configuration
-      if: steps.intial.outputs.status == 'success'
+      if: steps.initial.outputs.status == 'success'
       run: |
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
 
@@ -224,7 +224,7 @@ jobs:
         echo "CHANGELOG=Update: xray ${{ env.XRAY_VER }}" >> $GITHUB_ENV
 
     - name: Download package
-      if: steps.intial.outputs.status == 'success'
+      if: steps.initial.outputs.status == 'success'
       run: |
         cd openwrt
         make defconfig
@@ -232,18 +232,18 @@ jobs:
         find dl -size -1024c -exec rm -f {} \;
 
     - name: Compile the firmware
-      if: steps.intial.outputs.status == 'success'
+      if: steps.initial.outputs.status == 'success'
       run: |
         cd ./openwrt
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
 
     - name: Check space usage
-      if: steps.intial.outputs.status == 'success' && (!cancelled())
+      if: steps.initial.outputs.status == 'success' && (!cancelled())
       run: df -hT
 
     - name: Organize files
-      if: steps.intial.outputs.status == 'success'
+      if: steps.initial.outputs.status == 'success'
       run: |
         newFile=$(echo "${{ env.CHANGELOG }}" | cut -d\  -f2 )
         rm -f  $GITHUB_WORKSPACE/old/${newFile}_*.ipk
@@ -251,7 +251,7 @@ jobs:
 
     - name: Release and upload assets
       uses: softprops/action-gh-release@v1
-      if: steps.intial.outputs.status == 'success'
+      if: steps.initial.outputs.status == 'success'
       with:
         name: ${{ env.RELEASE_NAME }}
         tag_name: ${{ env.TAG_NAME }}
@@ -277,7 +277,7 @@ jobs:
 
     - name: Organize files to Lanzou
       id: lanzou
-      if: steps.intial.outputs.status == 'success' && ${{ env.LANZOU_PSD }}
+      if: steps.initial.outputs.status == 'success' && ${{ env.LANZOU_PSD }}
       run: |
         newFile=$(echo "${{ env.CHANGELOG }}" | cut -d\  -f2 )
         mv -f $GITHUB_WORKSPACE/old/${newFile}_*.ipk $GITHUB_WORKSPACE/old/${newFile}_*.zip
