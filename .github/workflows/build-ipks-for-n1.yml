@@ -280,7 +280,8 @@ jobs:
       if: steps.initial.outputs.status == 'success'
       run: |
         newFile=$(echo "${{ env.CHANGELOG }}" | cut -d\  -f2 )
-        mv -f $GITHUB_WORKSPACE/old/${newFile}_*.ipk $GITHUB_WORKSPACE/old/${newFile}_*.zip
+        mkdir -p $GITHUB_WORKSPACE/new
+        mv -f $GITHUB_WORKSPACE/old/${newFile}_*.ipk $GITHUB_WORKSPACE/new/${newFile}_*.zip
         echo "::set-output name=status::success"
 
     - name: Set Up Python 3
@@ -310,4 +311,4 @@ jobs:
       if: steps.lanzou.outputs.status == 'success'
       run: python $GITHUB_WORKSPACE/.github/lzy.py
       env:
-        UPLOAD_FOLDER: $GITHUB_WORKSPACE/old/*.zip
+        UPLOAD_FOLDER: $GITHUB_WORKSPACE/new/
