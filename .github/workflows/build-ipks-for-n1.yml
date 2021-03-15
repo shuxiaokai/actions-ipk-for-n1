@@ -102,7 +102,7 @@ jobs:
       id: golang
       if: steps.v2ray.outputs.status == 'success' || steps.xray.outputs.status == 'success'
       run: |
-        get_Go_ver=$(curl -sL https://raw.githubusercontent.com/v2fly/v2ray-core/master/azure-pipelines.yml |grep '^\ \+version: ' |cut -d \" -f2 )
+        get_Go_ver=$(curl -sL https://raw.githubusercontent.com/XTLS/Xray-core/main/.github/workflows/release.yml |grep -o 'go-version:[A-Za-z0-9^\.\t ]\+' |cut -d \^ -f2 )
         get_Go_ver_major=$(echo $get_Go_ver |awk -F '.' '{print $1"."$2}')
         get_Go_ver_patch=$(echo $get_Go_ver |cut -d \. -f3)
         lean_golang=$(curl -sL https://raw.githubusercontent.com/coolsnowwolf/packages/master/lang/golang/golang/Makefile)
