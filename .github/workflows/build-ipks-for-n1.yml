@@ -144,7 +144,7 @@ jobs:
       uses: actions/setup-go@v2
       if: steps.initial.outputs.status == 'success'
       with:
-        go-version: "^1.15"
+        go-version: "^1.16"
 
     - name: Clone source code
       working-directory: /workdir
