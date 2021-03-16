@@ -8,13 +8,13 @@ name: Build ipks For N1
 
 on:
   repository_dispatch:
-#  push:
-#    branches:
-#      - master
+  push:
+    branches:
+      - master
 #    paths:
 #      - '.config'
-  schedule:
-    - cron: 0 * * * *
+#  schedule:
+#    - cron: 0 * * * *
 #  watch:
 #    types: started
 
