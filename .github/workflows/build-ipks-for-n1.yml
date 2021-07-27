@@ -83,7 +83,7 @@ jobs:
         if ls ./old/* |grep -q "v2ray_$ver"; then
           sed -i '/^CONFIG_PACKAGE_v2ray/s/^/#/' ./.config 
         else
-          echo "::set-output name=status::success"
+          #echo "::set-output name=status::success"
           echo "V2RAY_VER=$ver" >> $GITHUB_ENV
         fi
 
@@ -96,7 +96,7 @@ jobs:
         if ls ./old/* |grep -q "xray_$ver"; then
           sed -i '/CONFIG_PACKAGE_xray/c CONFIG_PACKAGE_xray=y' ./.config
         else
-          echo "::set-output name=status::success"
+          #echo "::set-output name=status::success"
           echo "XRAY_VER=$ver" >> $GITHUB_ENV
         fi
 
