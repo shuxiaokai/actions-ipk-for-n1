@@ -27,10 +27,12 @@ env:
   # 登录蓝奏云后查看cookie
   # LANZOU_ID ： woozooo.com -> Cookie -> ylogin
   # LANZOU_PSD ： pc.woozooo.com -> Cookie -> phpdisk_info
-  LANZOU_ID: ${{ secrets.LANZOU_ID }}
-  LANZOU_PSD: ${{ secrets.LANZOU_PSD }}
+  ylogin: ${{ secrets.LANZOU_ID }}
+  phpdisk_info: ${{ secrets.LANZOU_PSD }}
   # 蓝奏云里的文件夹名（需手动在蓝奏云创建）
-  LANZOU_FOLDER: 'ipksforN1'
+  #LANZOU_FOLDER: 'ipksforN1'
+  # 蓝奏云里的文件夹ID（ipksforN1:2785444）
+  LANZOU_FOLDER_ID: '2785444'
 
 jobs:
   build:
@@ -83,7 +85,7 @@ jobs:
         if ls ./old/* |grep -q "v2ray_$ver"; then
           sed -i '/^CONFIG_PACKAGE_v2ray/s/^/#/' ./.config 
         else
-          #echo "::set-output name=status::success"
+          echo "::set-output name=status::success"
           echo "V2RAY_VER=$ver" >> $GITHUB_ENV
         fi
 
@@ -277,40 +279,12 @@ jobs:
         git remote set-url --add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
         git push -u origin release
 
-    - name: Organize files to Lanzou
+    - name: Upload App To Lanzou
       id: lanzou
-      if: steps.initial.outputs.status == 'success'
+      if: steps.initial.outputs.status == 'success' && ${{ env.ylogin }}
       run: |
         newFile=$(echo "${{ env.CHANGELOG }}" | cut -d\  -f2 )
         mkdir -p $GITHUB_WORKSPACE/new
         mv -f $GITHUB_WORKSPACE/old/${newFile}_*.ipk $GITHUB_WORKSPACE/new/${newFile}_*.zip
-        echo "::set-output name=status::success"
-
-    - name: Set Up Python 3
-      if: steps.lanzou.outputs.status == 'success'
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.x
-
-    - name: Dependence Install
-      if: steps.lanzou.outputs.status == 'success'
-      run: |
-        pip install requests
-        pip install lanzou-api
-
-    - name: Download Script
-      if: steps.lanzou.outputs.status == 'success'
-      shell: python
-      run: |
-        import requests,os
-        res = requests.get('https://raw.githubusercontent.com/Celeter/build/master/.github/scripts/API_lanzou.py')
-        with open(os.environ["FILE_PATH"], 'wb') as f:
-          f.write(res.content)
-      env:
-        FILE_PATH: ${{ github.workspace }}/.github/lzy.py
-
-    - name: Upload App To Lanzou
-      if: steps.lanzou.outputs.status == 'success'
-      run: python $GITHUB_WORKSPACE/.github/lzy.py
-      env:
-        UPLOAD_FOLDER: $GITHUB_WORKSPACE/new/
+        path="$GITHUB_WORKSPACE/new/${newFile}_*.zip"
+        python3 $GITHUB_WORKSPACE/.github/lzy_web.py "$path" "$LANZOU_FOLDER_ID"
