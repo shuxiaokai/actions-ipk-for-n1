@@ -13,8 +13,8 @@ on:
       - master
 #    paths:
 #      - '.config'
-#  schedule:
-#    - cron: 0 * * * *
+  schedule:
+    - cron: 0 * * * *
 #  watch:
 #    types: started
 
@@ -85,7 +85,7 @@ jobs:
         if ls ./old/* |grep -q "v2ray_$ver"; then
           sed -i '/^CONFIG_PACKAGE_v2ray/s/^/#/' ./.config 
         else
-          echo "::set-output name=status::success"
+          #echo "::set-output name=status::success"
           echo "V2RAY_VER=$ver" >> $GITHUB_ENV
         fi
 
