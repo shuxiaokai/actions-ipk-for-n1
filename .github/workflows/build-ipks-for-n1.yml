@@ -66,8 +66,8 @@ jobs:
         latest=$(curl -sL https://github.com/pymumu/smartdns/releases )
         #ver=$(echo "$latest"|grep -o 'smartdns.[0-9_\.-]\+.x86_64-linux-all.tar.gz' |head -1 |sed -e 's#smartdns.##' -e 's#.x86_64.*##')
         #commit=$(echo "$latest"|grep -o '/pymumu/smartdns/commit/[a-z0-9]\+'|head -1 | cut -d\/ -f5)
-        ver="1.2021.02.06-0000"
-        commit="e5eb562deeb93d74d2f60f38bc83acce5882344b"
+        ver="1.2021.07.30-0000"
+        commit="b77cea63e9eecd45ab257906868c77baec27e6b7"
         if ls ./old/* |grep -q "smartdns_$ver"; then
           sed -i '/^CONFIG_PACKAGE_smartdns/s/^/#/' ./.config 
         else
