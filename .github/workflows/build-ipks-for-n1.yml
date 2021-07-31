@@ -66,10 +66,11 @@ jobs:
         latest=$(curl -sL https://github.com/pymumu/smartdns/releases )
         #ver=$(echo "$latest"|grep -o 'smartdns.[0-9_\.-]\+.x86_64-linux-all.tar.gz' |head -1 |sed -e 's#smartdns.##' -e 's#.x86_64.*##')
         #commit=$(echo "$latest"|grep -o '/pymumu/smartdns/commit/[a-z0-9]\+'|head -1 | cut -d\/ -f5)
-        ver="1.2021.07.30-0000"
-        commit="b77cea63e9eecd45ab257906868c77baec27e6b7"
-        if ls ./old/* |grep -q "smartdns_$ver"; then
-          sed -i '/^CONFIG_PACKAGE_smartdns/s/^/#/' ./.config 
+        ver="1.$(date -d "8 hour" -u +%Y.%m.%d-%H%M)"
+        commit=$(curl -sL https://github.com/pymumu/smartdns/commits/master|grep -o '/pymumu/smartdns/commit/[a-z0-9]\+'|head -1 | cut -d\/ -f5)
+        if curl -sL https://github.com/o0HalfLife0o/actions-ipk-for-n1/commits/release |grep -q $commit; then
+        #if ls ./old/* |grep -q "smartdns_$ver"; then
+          sed -i '/^CONFIG_PACKAGE_smartdns/s/^/#/' ./.config
         else
           echo "::set-output name=status::success"
           echo "SMARTDNS_VER=$ver" >> $GITHUB_ENV
@@ -192,7 +193,7 @@ jobs:
           make ./package/feeds/packages/smartdns/download V=s
           make ./package/feeds/packages/smartdns/check FIXUP=1 V=s
         fi
-        echo "CHANGELOG=Update: smartdns ${{ env.SMARTDNS_VER }}" >> $GITHUB_ENV
+        echo "CHANGELOG=Update: smartdns ${{ env.SMARTDNS_VER }} ${{ env.SMARTDNS_COMMIT }}" >> $GITHUB_ENV
 
     - name: Update Golang
       if: steps.golang.outputs.status == 'success'
