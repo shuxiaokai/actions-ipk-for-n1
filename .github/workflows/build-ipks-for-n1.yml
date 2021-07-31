@@ -282,7 +282,7 @@ jobs:
 
     - name: Upload App To Lanzou
       id: lanzou
-      if: steps.initial.outputs.status == 'success' && ${{ env.ylogin }}
+      if: steps.initial.outputs.status == 'success'
       run: |
         newFile=$(echo "${{ env.CHANGELOG }}" | cut -d\  -f2 )
         mkdir -p $GITHUB_WORKSPACE/new
