@@ -67,7 +67,7 @@ jobs:
         #ver=$(echo "$latest"|grep -o 'smartdns.[0-9_\.-]\+.x86_64-linux-all.tar.gz' |head -1 |sed -e 's#smartdns.##' -e 's#.x86_64.*##')
         #commit=$(echo "$latest"|grep -o '/pymumu/smartdns/commit/[a-z0-9]\+'|head -1 | cut -d\/ -f5)
         ver="1.$(date -d "8 hour" -u +%Y.%m.%d-%H%M)"
-        commit=$(curl -sL https://github.com/pymumu/smartdns/commits/master|grep -o '/pymumu/smartdns/commit/[a-z0-9]\+'|head -1 | cut -d\/ -f5)
+        commit=$(curl -sL https://github.com/pymumu/smartdns/commits/master |grep -o '/pymumu/smartdns/commit/[a-z0-9]\+' |head -1 | cut -d\/ -f5)
         shortCommit=$(echo $commit |cut -c 1-20)
         if curl -sL https://github.com/o0HalfLife0o/actions-ipk-for-n1/commits/release |grep -q "$shortCommit"; then
         #if ls ./old/* |grep -q "smartdns_$ver"; then
