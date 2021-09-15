@@ -145,7 +145,7 @@ jobs:
         echo "GOPATH=$(dirname $GITHUB_WORKSPACE)" >> $GITHUB_ENV
         echo "$(dirname $GITHUB_WORKSPACE)/bin" >> $GITHUB_PATH
         if ! ${{ env.GO_VERSION_MAJOR_MINOR }}; then
-          echo "GO_VERSION_MAJOR_MINOR=latest" >> $GITHUB_ENV
+          echo "GO_VERSION_MAJOR_MINOR_PATCH=latest" >> $GITHUB_ENV
         fi
       shell: bash
 
@@ -153,7 +153,7 @@ jobs:
       uses: actions/setup-go@v2
       if: steps.initial.outputs.status == 'success'
       with:
-        go-version: "^${{ env.GO_VERSION_MAJOR_MINOR }}"
+        go-version: "${{ env.GO_VERSION_MAJOR_MINOR_PATCH }}"
 
     - name: Clone source code
       working-directory: /workdir
