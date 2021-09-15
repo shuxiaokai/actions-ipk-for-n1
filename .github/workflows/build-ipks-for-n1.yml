@@ -154,7 +154,7 @@ jobs:
 
     - name: Setup Latest Go
       uses: actions/setup-go@v2
-      if: $(go version)
+      if: $(( go version ))
       with:
         go-version: latest
 
