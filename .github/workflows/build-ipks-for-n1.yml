@@ -146,12 +146,15 @@ jobs:
         echo "$(dirname $GITHUB_WORKSPACE)/bin" >> $GITHUB_PATH
       shell: bash
 
-    - name: Setup Go 1.x
+    - name: Setup Go
       uses: actions/setup-go@v2
       if: ${{ env.GO_VERSION_MAJOR_MINOR }}
       with:
         go-version: "^${{ env.GO_VERSION_MAJOR_MINOR }}"
-      elif: steps.initial.outputs.status == 'success'
+
+    - name: Setup Latest Go
+      uses: actions/setup-go@v2
+      if: $(go version)
       with:
         go-version: latest
 
