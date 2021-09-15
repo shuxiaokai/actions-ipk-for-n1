@@ -144,19 +144,16 @@ jobs:
         echo "TAG_NAME=$(date -d "8 hour" -u +%Y%m%d%H%M)" >> $GITHUB_ENV
         echo "GOPATH=$(dirname $GITHUB_WORKSPACE)" >> $GITHUB_ENV
         echo "$(dirname $GITHUB_WORKSPACE)/bin" >> $GITHUB_PATH
+        if ! ${{ env.GO_VERSION_MAJOR_MINOR }}; then
+          echo "GO_VERSION_MAJOR_MINOR=latest" >> $GITHUB_ENV
+        fi
       shell: bash
 
     - name: Setup Go
       uses: actions/setup-go@v2
-      if: ${{ env.GO_VERSION_MAJOR_MINOR }}
+      if: steps.initial.outputs.status == 'success'
       with:
         go-version: "^${{ env.GO_VERSION_MAJOR_MINOR }}"
-
-    - name: Setup Latest Go
-      uses: actions/setup-go@v2
-      if: go version
-      with:
-        go-version: latest
 
     - name: Clone source code
       working-directory: /workdir
