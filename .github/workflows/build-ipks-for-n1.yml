@@ -148,9 +148,12 @@ jobs:
 
     - name: Setup Go 1.x
       uses: actions/setup-go@v2
-      if: steps.initial.outputs.status == 'success'
+      if: ${{ env.GO_VERSION_MAJOR_MINOR }}
       with:
         go-version: "^${{ env.GO_VERSION_MAJOR_MINOR }}"
+      elif: steps.initial.outputs.status == 'success'
+      with:
+        go-version: latest
 
     - name: Clone source code
       working-directory: /workdir
